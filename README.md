@@ -2,7 +2,9 @@
 This script can convert .vtk files to .dat files for viewing in Tecplot
 
 ## Usage:  Convert .xdmf / .vtr / .vtk to Tecplot .dat / .tec / .plt / .szplt
-Though this script can convert .vtk files to tecplot .dat, it can enable the above conversions.
+Though this script can only convert .vtk files to tecplot .dat, it can enable the above conversions.
+
+How?
 1. Open Paraview readable formats in Paraview. 
 2. File>Save Data...>select format as .vtk
 3. Keep in the .vtk and script in same folder and run script with appropriate filenames.

@@ -25,8 +25,6 @@ def vtk2tecdat(inputFilename,outputFilename):
 
           elif (nvar > len(npts)+1):
             varnames.append(line.split()[0]) # subsequent variable names
-            print('\b', end='')
-
 
 
         # writing z point coordinates
@@ -125,21 +123,21 @@ def vtk2tecdat(inputFilename,outputFilename):
     print('Writing grid data:')
 
     print(' >x-coordinate')
-    for i in range(1,len(X)):
+    for i in range(0,len(X)):
       outFile.write(str(X[i])+' ')
       if ((i+1)%9==0):
         outFile.write('\n')
     outFile.write('\n')
 
     print(' >y-coordinate')
-    for i in range(1,len(Y)):
+    for i in range(0,len(Y)):
       outFile.write(str(Y[i])+' ')
       if ((i+1)%9==0):
         outFile.write('\n')
     outFile.write('\n')
 
     print(' >z-coordinate')
-    for i in range(1,len(Z)):
+    for i in range(0,len(Z)):
       outFile.write(str(Z[i])+' ')
       if ((i+1)%9==0):
         outFile.write('\n')
@@ -159,4 +157,4 @@ def vtk2tecdat(inputFilename,outputFilename):
 
 
 
-vtk2tecdat("3dfield.vtk","3dfieldtec.dat")
+vtk2tecdat("velfield.vtk","velfield.dat")
