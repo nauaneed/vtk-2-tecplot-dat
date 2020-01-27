@@ -40,7 +40,7 @@ def vtk2tecdat(inputFilename,outputFilename):
             del l
             l = []
             writez = 0
-            print ('Reading variable names')
+            print ('  Reading variable names')
             # print(z)
 
         # writing y point coordinates
@@ -75,22 +75,22 @@ def vtk2tecdat(inputFilename,outputFilename):
 
         if (line.find('Z_COORDINATES') != -1): # flag to write "Z_COORDINATES"
           writez = 1
-          print('Reading z-coordinates')
+          print('  Reading z-coordinates')
 
         elif (line.find('Y_COORDINATES') != -1): # flag to write "Y_COORDINATES"
           writey = 1
-          print('Reading y-coordinates')
+          print('  Reading y-coordinates')
 
         elif (line.find('X_COORDINATES') != -1):  # flag to write "X_COORDINATES"
           writex = 1
-          print('Reading x-coordinates')
+          print('  Reading x-coordinates')
 
       elif (line.find('DIMENSIONS') != -1): # # To fine npts(number of points in each direction) and number of variables
         npts=re.findall("\d+", line)
-        print('Number of points = '+' '.join(npts))
-    print('Variables = ' + ' '.join(varnames))
+        print('  Number of points = '+' '.join(npts))
+    print('  Variables = ' + ' '.join(varnames))
 
-  print ('Generating grid data')
+  print ('  Generating grid data')
 
   np.set_printoptions(formatter={'float': lambda x: format(x, '6.10E')})
   X, Y, Z = np.meshgrid(x, y, z)
@@ -103,7 +103,7 @@ def vtk2tecdat(inputFilename,outputFilename):
   Y = np.reshape(Y, (-1,))
   Z = np.reshape(Z, (-1,))
 
-  print ("Begin write")
+  print ("  Begin write")
 
   with open(outputFilename, 'w') as outFile:
     outFile.write('TITLE="3D"\n')
@@ -120,30 +120,30 @@ def vtk2tecdat(inputFilename,outputFilename):
     # print(X[int(npts[0])-3:int(npts[0])+3])
     # print(Y[int(npts[0]) - 3:int(npts[0]) + 3])
     # print(Z[int(npts[0])*int(npts[1]) - 3:int(npts[0])*int(npts[1]) + 3])
-    print('Writing grid data:')
+    print('  Writing grid data:')
 
-    print(' >x-coordinate')
+    print('   x-coordinate')
     for i in range(0,len(X)):
       outFile.write(str(X[i])+' ')
       if ((i+1)%9==0):
         outFile.write('\n')
     outFile.write('\n')
 
-    print(' >y-coordinate')
+    print('   y-coordinate')
     for i in range(0,len(Y)):
       outFile.write(str(Y[i])+' ')
       if ((i+1)%9==0):
         outFile.write('\n')
     outFile.write('\n')
 
-    print(' >z-coordinate')
+    print('   z-coordinate')
     for i in range(0,len(Z)):
       outFile.write(str(Z[i])+' ')
       if ((i+1)%9==0):
         outFile.write('\n')
     outFile.write('\n')
 
-    print('Copying solution data')
+    print('  Copying solution data')
     with open(inputFilename, 'r') as infile:
       regex = re.compile('[qwrtyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM]')
       for line in infile:
@@ -152,9 +152,25 @@ def vtk2tecdat(inputFilename,outputFilename):
             outFile.write(line)
         elif (line.find('SCALARS') != -1):
           writeflag=1
-  print('Done')
+  print('  Done')
 
+import os
+cwd = '.'
+text_files = [f for f in os.listdir(cwd) if f.endswith('.vtk')]
+print(" List of Files")
+for file in text_files:
+    print("  "+file)
 
+if os.name == 'nt':
+    for file in text_files:
+        print(" Converting "+file)
+        vtk2tecdat(file,file[:-3]+'dat')
+else:
+    for file in text_files:
+        print(" Converting "+file)
+        vtk2tecdat(file,file[:-3]+'dat')
+        bashCommand="tec360 -convert "+file[:-3]+"dat"+" -o "+file[:-3]+"szplt"
+        print(bashCommand)
+        os.system(bashCommand)
 
-
-vtk2tecdat("velfield.vtk","velfield.dat")
+print(" All Done!")
