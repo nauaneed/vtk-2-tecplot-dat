@@ -1,4 +1,3 @@
-import os
 import re
 import numpy as np
 
@@ -160,24 +159,29 @@ def write_dat(inputFilename, outputFilename, npts, varnames, X, Y, Z):
                     writeflag = 1
     print('  Done')
 
+if __name__ == "__main__":
+    import sys
+    import os
+    #print(sys.argv[1:])
+    #print(len(sys.argv[1:]))
+    cwd = '.'
+    vtk_files_list = [f for f in os.listdir(cwd) if f.endswith('.vtk')]
+    print(" List of Files")
+    for file in vtk_files_list:
+        print("  " + file)
 
-cwd = '.'
-text_files = [f for f in os.listdir(cwd) if f.endswith('.vtk')]
-print(" List of Files")
-for file in text_files:
-    print("  " + file)
+    if os.name == 'nt':
+        for file in vtk_files_list:
+            print(" Converting " + file)
+            npts, varnames, X, Y, Z = readvtk(file)
+            write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
+    else:
+        for file in vtk_files_list:
+            print(" Converting " + file)
+            npts, varnames, X, Y, Z = readvtk(file)
+            write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
+            bashCommand = "tec360 -convert " + file[:-3] + "dat" + " -o " + file[:-3] + "szplt &"
+            #print(bashCommand)
+            os.system(bashCommand)
 
-if os.name == 'nt':
-    for file in text_files:
-        print(" Converting " + file)
-        vtk2tecdat(file, file[:-3] + 'dat')
-else:
-    for file in text_files:
-        print(" Converting " + file)
-        npts, varnames, X, Y, Z = readvtk(file)
-        write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
-        bashCommand = "tec360 -convert " + file[:-3] + "dat" + " -o " + file[:-3] + "szplt &"
-        #print(bashCommand)
-        os.system(bashCommand)
-
-print(" All Done!")
+    print(" All Done!")
