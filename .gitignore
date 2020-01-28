@@ -103,6 +103,12 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-
 # tecplot library
 tecio/*.so
+
+# test files
+.szplt
+.log
+.dat
+.vtk
+

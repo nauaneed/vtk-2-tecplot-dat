@@ -1,7 +1,9 @@
-def vtk2tecdat(inputFilename, outputFilename):
-    import re
-    import sys
-    import numpy as np
+import os
+import re
+import numpy as np
+
+
+def readvtk(inputFilename):
     nvar = 0  # number of variables
     varnames = []  # names of variables
 
@@ -9,7 +11,6 @@ def vtk2tecdat(inputFilename, outputFilename):
     readx = 0
     ready = 0
     readz = 0
-    writeflag = 0
 
     ## reading part
     with open(inputFilename, 'r') as infile:
@@ -103,7 +104,12 @@ def vtk2tecdat(inputFilename, outputFilename):
     Y = np.reshape(Y, (-1,))
     Z = np.reshape(Z, (-1,))
 
+    return npts, varnames, X, Y, Z
     ## writing part
+
+
+def write_dat(inputFilename, outputFilename, npts, varnames, X, Y, Z):
+    writeflag = 0
     print("  Begin write")
     np.set_printoptions(formatter={'float': lambda x: format(x, '6.10E')})
     with open(outputFilename, 'w') as outFile:
@@ -155,8 +161,6 @@ def vtk2tecdat(inputFilename, outputFilename):
     print('  Done')
 
 
-import os
-
 cwd = '.'
 text_files = [f for f in os.listdir(cwd) if f.endswith('.vtk')]
 print(" List of Files")
@@ -170,9 +174,10 @@ if os.name == 'nt':
 else:
     for file in text_files:
         print(" Converting " + file)
-        vtk2tecdat(file, file[:-3] + 'dat')
+        npts, varnames, X, Y, Z = readvtk(file)
+        write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
         bashCommand = "tec360 -convert " + file[:-3] + "dat" + " -o " + file[:-3] + "szplt &"
-        print(bashCommand)
+        #print(bashCommand)
         os.system(bashCommand)
 
 print(" All Done!")
