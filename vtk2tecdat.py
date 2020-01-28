@@ -5,6 +5,9 @@ import numpy as np
 def readvtk(inputFilename):
     nvar = 0  # number of variables
     varnames = []  # names of variables
+    x = np.array([])
+    y = np.array([])
+    z = np.array([])
 
     iline = 0
     readx = 0
@@ -13,7 +16,6 @@ def readvtk(inputFilename):
 
     ## reading part
     with open(inputFilename, 'r') as infile:
-        l = []
         # to find number of points and their coordinates
         for line in infile:
             if ("npts" in locals()):  # if number of points have already been found
@@ -27,50 +29,29 @@ def readvtk(inputFilename):
                         varnames.append(line.split()[0])  # subsequent variable names
 
                 # reading z point coordinates
-                if readz == 1:
-                    for t in line.split():
-                        try:
-                            l.append(float(t))
-                        except ValueError:
-                            pass
-
-                    if len(l) == int(npts[2]):
-                        z = np.asarray(l)
-                        del l
-                        l = []
-                        readz = 0
+                if readz == 1 and len(z) <= int(npts[2]):
+                    try:
+                        z=np.append(z, np.array(line.split(), dtype=float))
+                    except ValueError:
+                        readz=0
                         print('  Reading variable names')
-                        # print(z)
+                        pass
 
                 # reading y point coordinates
-                elif ready == 1:
-                    for t in line.split():
-                        try:
-                            l.append(float(t))
-                        except ValueError:
-                            pass
-
-                    if len(l) == int(npts[1]):
-                        y = np.asarray(l)
-                        del l
-                        l = []
+                elif ready == 1 and len(y) <= int(npts[1]):
+                    try:
+                        y=np.append(y, np.array(line.split(), dtype=float))
+                    except ValueError:
                         ready = 0
-                        # print(y)
+                        pass
 
                 # reading x point coordinates
-                elif readx == 1:
-                    for t in line.split():
-                        try:
-                            l.append(float(t))
-                        except ValueError:
-                            pass
-
-                    if len(l) == int(npts[0]):
-                        x = np.asarray(l)
-                        del l
-                        l = []
+                elif readx == 1 and len(x) <= int(npts[0]):
+                    try:
+                        x=np.append(x, np.array(line.split(), dtype=float))
+                    except ValueError:
                         readx = 0
-                        # print(x)
+                        pass
 
                 if (line.find('Z_COORDINATES') != -1):  # flag to write "Z_COORDINATES"
                     readz = 1
@@ -104,9 +85,8 @@ def readvtk(inputFilename):
     Z = np.reshape(Z, (-1,))
 
     return npts, varnames, X, Y, Z
-    ## writing part
 
-
+## writing part
 def write_dat(inputFilename, outputFilename, npts, varnames, X, Y, Z):
     writeflag = 0
     print("  Begin write")
@@ -159,11 +139,13 @@ def write_dat(inputFilename, outputFilename, npts, varnames, X, Y, Z):
                     writeflag = 1
     print('  Done')
 
+
 if __name__ == "__main__":
     import sys
     import os
-    #print(sys.argv[1:])
-    #print(len(sys.argv[1:]))
+
+    # print(sys.argv[1:])
+    # print(len(sys.argv[1:]))
     cwd = '.'
     vtk_files_list = [f for f in os.listdir(cwd) if f.endswith('.vtk')]
     print(" List of Files")
@@ -181,7 +163,7 @@ if __name__ == "__main__":
             npts, varnames, X, Y, Z = readvtk(file)
             write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
             bashCommand = "tec360 -convert " + file[:-3] + "dat" + " -o " + file[:-3] + "szplt &"
-            #print(bashCommand)
+            # print(bashCommand)
             os.system(bashCommand)
 
     print(" All Done!")
