@@ -18,52 +18,51 @@ def readvtk(inputFilename):
     with open(inputFilename, 'r') as infile:
         # to find number of points and their coordinates
         for line in infile:
-            if ("npts" in locals()):  # if number of points have already been found
+            
+            # reading z point coordinates
+            if readz == 1 and len(z) <= int(npts[2]):
+                try:
+                    z=np.append(z, np.array(line.split(), dtype=float))
+                except ValueError:
+                    readz=0
+                    print('  Reading variable names')
+                    pass
 
-                if (line.find('double') != -1):  # using double as bait to catch variable names
-                    nvar = nvar + 1
-                    if (nvar == len(npts) + 1):
-                        varnames.append(line.split()[1])  # 1st variable name
+            # reading y point coordinates
+            elif ready == 1 and len(y) <= int(npts[1]):
+                try:
+                    y=np.append(y, np.array(line.split(), dtype=float))
+                except ValueError:
+                    ready = 0
+                    pass
 
-                    elif (nvar > len(npts) + 1):
-                        varnames.append(line.split()[0])  # subsequent variable names
+            # reading x point coordinates
+            elif readx == 1 and len(x) <= int(npts[0]):
+                try:
+                    x=np.append(x, np.array(line.split(), dtype=float))
+                except ValueError:
+                    readx = 0
+                    pass
 
-                # reading z point coordinates
-                if readz == 1 and len(z) <= int(npts[2]):
-                    try:
-                        z=np.append(z, np.array(line.split(), dtype=float))
-                    except ValueError:
-                        readz=0
-                        print('  Reading variable names')
-                        pass
+            elif (line.find('Z_COORDINATES') != -1):  # flag to write "Z_COORDINATES"
+                readz = 1
+                print('  Reading z-coordinates')
 
-                # reading y point coordinates
-                elif ready == 1 and len(y) <= int(npts[1]):
-                    try:
-                        y=np.append(y, np.array(line.split(), dtype=float))
-                    except ValueError:
-                        ready = 0
-                        pass
+            elif (line.find('Y_COORDINATES') != -1):  # flag to write "Y_COORDINATES"
+                ready = 1
+                print('  Reading y-coordinates')
 
-                # reading x point coordinates
-                elif readx == 1 and len(x) <= int(npts[0]):
-                    try:
-                        x=np.append(x, np.array(line.split(), dtype=float))
-                    except ValueError:
-                        readx = 0
-                        pass
+            elif (line.find('X_COORDINATES') != -1):  # flag to write "X_COORDINATES"
+                readx = 1
+                print('  Reading x-coordinates')
 
-                if (line.find('Z_COORDINATES') != -1):  # flag to write "Z_COORDINATES"
-                    readz = 1
-                    print('  Reading z-coordinates')
+            elif (line.find('double') != -1):  # using double as bait to catch variable names
+                nvar = nvar + 1
+                if (nvar == len(npts) + 1):
+                    varnames.append(line.split()[1])  # 1st variable name
 
-                elif (line.find('Y_COORDINATES') != -1):  # flag to write "Y_COORDINATES"
-                    ready = 1
-                    print('  Reading y-coordinates')
-
-                elif (line.find('X_COORDINATES') != -1):  # flag to write "X_COORDINATES"
-                    readx = 1
-                    print('  Reading x-coordinates')
+                elif (nvar > len(npts) + 1):
+                    varnames.append(line.split()[0])  # subsequent variable names
 
             elif (line.find(
                     'DIMENSIONS') != -1):  # # To fine npts(number of points in each direction) and number of variables
@@ -163,7 +162,7 @@ if __name__ == "__main__":
             npts, varnames, X, Y, Z = readvtk(file)
             write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
             bashCommand = "tec360 -convert " + file[:-3] + "dat" + " -o " + file[:-3] + "szplt &"
-            # print(bashCommand)
+            print(bashCommand)
             os.system(bashCommand)
 
     print(" All Done!")
