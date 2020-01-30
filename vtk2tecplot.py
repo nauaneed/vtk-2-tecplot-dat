@@ -1,6 +1,7 @@
 import re
 import numpy as np
 import linecache
+from tecio.tecio_szl import create_ordered_zone, open_file, zone_write_double_values, close_file, FD_DOUBLE
 
 
 def readvtk_mesh(inputFilename):
@@ -96,7 +97,7 @@ def readvtk_mesh(inputFilename):
 
 def readvtk_var(inputFilename, totalpoints, linenum, varnames, nvar):
     line = linecache.getline(inputFilename, linenum)
-    foundvariable=False
+    foundvariable = False
     while not foundvariable:
         linenum = linenum + 1
         line = linecache.getline(inputFilename, linenum)
@@ -111,11 +112,11 @@ def readvtk_var(inputFilename, totalpoints, linenum, varnames, nvar):
 
     regex = re.compile('[qwrtyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM]')
     while regex.search(line) is not None:
-        linenum=linenum+1
+        linenum = linenum + 1
         line = linecache.getline(inputFilename, linenum)
     num_points_in_line = len(line.split())
     num_lines_to_read = int(totalpoints / num_points_in_line)
-    vardata_partial = np.loadtxt(inputFilename, skiprows=linenum, max_rows=num_lines_to_read - 1)
+    vardata_partial = np.loadtxt(inputFilename, skiprows=linenum - 1, max_rows=num_lines_to_read)
     if np.mod(totalpoints, num_points_in_line) != 0:
         linenum = linenum + num_lines_to_read
         line = linecache.getline(inputFilename, linenum)
@@ -129,7 +130,7 @@ def readvtk_soln(inputFilename, totalpoints, linenum, nvar):
     varnames = []
     end_of_file = False
     linenum, vardata, varnames, nvar = readvtk_var(inputFilename, totalpoints, linenum, varnames, nvar)
-    vardata=[vardata]
+    vardata = [vardata]
     for i in range(10):
         line = linecache.getline(inputFilename, linenum + i)
         if line.find('double') != -1:
@@ -138,10 +139,9 @@ def readvtk_soln(inputFilename, totalpoints, linenum, nvar):
         else:
             end_of_file = True
 
-
     while not end_of_file:
         linenum, ivardata, varnames, nvar = readvtk_var(inputFilename, totalpoints, linenum, varnames, nvar)
-        vardata=np.append(vardata,[ivardata],axis=0)
+        vardata = np.append(vardata, [ivardata], axis=0)
         for i in range(10):
             line = linecache.getline(inputFilename, linenum + i)
             if line.find('double') != -1:
@@ -237,11 +237,11 @@ def readvtk(inputFilename):
     X = np.reshape(X, (-1,))
     Y = np.reshape(Y, (-1,))
     Z = np.reshape(Z, (-1,))
+    # print(X.shape)
 
     return npts, varnames, X, Y, Z
 
 
-## writing part
 def write_dat(inputFilename, outputFilename, npts, varnames, X, Y, Z):
     writeflag = 0
     print("  Begin write")
@@ -295,12 +295,27 @@ def write_dat(inputFilename, outputFilename, npts, varnames, X, Y, Z):
     print('  Done')
 
 
+def write_szplt(outFilename, X, Y, Z, varnames, vardata, totalpoints):
+    var_names = ['X', 'Y', 'Z']
+    var_names.extend(varnames)
+    print('  Passing values to write')
+    file_handle = open_file(outFilename, "Incompact3d_data", var_names)
+    zone = create_ordered_zone(file_handle, "Zone", (int(npts[0]), int(npts[1]), int(npts[2])), None,
+                               [FD_DOUBLE for i in range(len(var_names))])
+    zone_write_double_values(file_handle, zone, 1, X)
+    zone_write_double_values(file_handle, zone, 2, Y)
+    zone_write_double_values(file_handle, zone, 3, Z)
+    for i in range(4, len(varnames) + 4):
+        zone_write_double_values(file_handle, zone, i, vardata[i - 4, :])
+    print('  Writing start')
+    close_file(file_handle)
+    print('  Done Writing')
+
+
 if __name__ == "__main__":
     import sys
     import os
 
-    # print(sys.argv[1:])
-    # print(len(sys.argv[1:]))
     cwd = '.'
     vtk_files_list = [f for f in os.listdir(cwd) if f.endswith('.vtk')]
     print(" List of Files")
@@ -315,12 +330,20 @@ if __name__ == "__main__":
     else:
         for file in vtk_files_list:
             print(" Converting " + file)
-            npts, X, Y, Z, totalpoints, linenum, nvar = readvtk_mesh(file)
-            # npts, varnames, X, Y, Z=readvtk(file)
-            varnames, vardata = readvtk_soln(file, totalpoints, linenum, nvar)
-            # write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
-            bashCommand = "tec360 -convert " + file[:-3] + "dat" + " -o " + file[:-3] + "szplt &"
-            print(bashCommand)
-            os.system(bashCommand)
+
+            if len(sys.argv) > 1:
+                if sys.argv[-1] == 'dat':
+                    npts, varnames, X, Y, Z = readvtk(file)
+                    write_dat(file, file[:-3] + 'dat', npts, varnames, X, Y, Z)
+                elif sys.argv[-1] == 'szplt':
+                    npts, X, Y, Z, totalpoints, linenum, nvar = readvtk_mesh(file)
+                    varnames, vardata = readvtk_soln(file, totalpoints, linenum, nvar)
+                    write_szplt(file[:-3] + 'szplt', X, Y, Z, varnames, vardata, totalpoints)
+                else:
+                    raise Exception("invalid outfile format")
+            else:
+                npts, X, Y, Z, totalpoints, linenum, nvar = readvtk_mesh(file)
+                varnames, vardata = readvtk_soln(file, totalpoints, linenum, nvar)
+                write_szplt(file[:-3] + 'szplt', X, Y, Z, varnames, vardata, totalpoints)
 
     print(" All Done!")
